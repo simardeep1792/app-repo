@@ -1,7 +1,7 @@
 .PHONY: build push toggle-bad toggle-good bump-dev
 
 IMAGE_REGISTRY ?= ghcr.io
-IMAGE_REPO ?= $(shell echo $${GITHUB_REPOSITORY:-example/progressive-delivery-app})
+IMAGE_REPO ?= $(shell echo $${GITHUB_REPOSITORY:-simardeep1792/app-repo})
 IMAGE_TAG ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "latest")
 IMAGE := $(IMAGE_REGISTRY)/$(IMAGE_REPO):$(IMAGE_TAG)
 

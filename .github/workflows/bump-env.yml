@@ -16,7 +16,7 @@ jobs:
       - name: Checkout env-repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/env-repo
+          repository: simardeep1792/env-repo
           token: ${{ secrets.ENV_REPO_TOKEN || secrets.GITHUB_TOKEN }}
           path: env-repo
 
