@@ -67,7 +67,39 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      - name: Trigger env bump
+      - name: Install yq
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: ./.github/workflows/bump-env.yml
-        secrets: inherit
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update environment repository
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Clone env repo
+          git clone https://github.com/simardeep1792/env-repo.git env-repo-temp
+          cd env-repo-temp
+          
+          # Update image tag
+          IMAGE_TAG="main-${{ github.sha }}"
+          yq e ".spec.template.spec.containers[0].image = \"ghcr.io/${{ github.repository }}:${IMAGE_TAG}\"" -i envs/dev/rollout.yaml
+          
+          # Create branch and commit
+          BRANCH="bump-${IMAGE_TAG}"
+          git checkout -b "${BRANCH}"
+          git add envs/dev/rollout.yaml
+          git commit -m "chore: bump app image to ${IMAGE_TAG}"
+          git push origin "${BRANCH}"
+          
+          # Create PR
+          gh pr create \
+            --title "chore: bump app image to ${IMAGE_TAG}" \
+            --body "Automated image bump to \`${IMAGE_TAG}\`" \
+            --head "${BRANCH}" \
+            --base main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
