@@ -84,8 +84,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Clone env repo
-          git clone https://github.com/simardeep1792/env-repo.git env-repo-temp
+          # Set up GitHub CLI authentication
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          
+          # Clone env repo using gh
+          gh repo clone simardeep1792/env-repo env-repo-temp
           cd env-repo-temp
           
           # Update image tag
