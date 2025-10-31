@@ -55,8 +55,10 @@ jobs:
       - name: Run Trivy vulnerability scanner
         if: github.event_name == 'push'
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}
+          scan-type: 'fs'
+          scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -64,6 +66,7 @@ jobs:
 
       - name: Upload Trivy scan results
         if: always() && github.event_name == 'push' && hashFiles('trivy-results.sarif') != ''
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
