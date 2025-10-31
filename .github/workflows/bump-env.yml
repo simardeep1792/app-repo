@@ -1,0 +1,70 @@
+name: Bump Environment
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy'
+        required: false
+        default: ''
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout env-repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/env-repo
+          token: ${{ secrets.ENV_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          path: env-repo
+
+      - name: Set image tag
+        id: image
+        run: |
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            TAG="${{ inputs.image_tag }}"
+          else
+            TAG="main-${GITHUB_SHA::7}"
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "registry=ghcr.io" >> $GITHUB_OUTPUT
+          echo "repository=${{ github.repository }}" >> $GITHUB_OUTPUT
+
+      - name: Update dev environment
+        run: |
+          cd env-repo
+          IMAGE="${{ steps.image.outputs.registry }}/${{ steps.image.outputs.repository }}:${{ steps.image.outputs.tag }}"
+          yq e ".spec.template.spec.containers[0].image = \"${IMAGE}\"" -i envs/dev/rollout.yaml
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          BRANCH="bump-${{ steps.image.outputs.tag }}"
+          git checkout -b "${BRANCH}"
+          git add envs/dev/rollout.yaml
+          git commit -m "chore: bump app image to ${{ steps.image.outputs.tag }}"
+          git push origin "${BRANCH}"
+
+      - name: Create or update PR
+        env:
+          GH_TOKEN: ${{ secrets.ENV_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          cd env-repo
+          BRANCH="bump-${{ steps.image.outputs.tag }}"
+          PR_TITLE="chore: bump app image to ${{ steps.image.outputs.tag }}"
+          
+          EXISTING_PR=$(gh pr list --head "${BRANCH}" --json number --jq '.[0].number' || echo "")
+          
+          if [ -n "${EXISTING_PR}" ]; then
+            echo "Updating existing PR #${EXISTING_PR}"
+            gh pr edit "${EXISTING_PR}" --title "${PR_TITLE}"
+          else
+            echo "Creating new PR"
+            gh pr create \
+              --title "${PR_TITLE}" \
+              --body "Automated image bump to \`${{ steps.image.outputs.tag }}\`" \
+              --head "${BRANCH}" \
+              --base main
+          fi
