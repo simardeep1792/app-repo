@@ -85,7 +85,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           # Set up GitHub CLI authentication
-          echo "${{ secrets.ENV_REPO_TOKEN || secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          echo "${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}" | gh auth login --with-token
           
           # Clone env repo using gh
           gh repo clone simardeep1792/env-repo env-repo-temp
@@ -109,4 +109,4 @@ jobs:
             --head "${BRANCH}" \
             --base main
         env:
-          GH_TOKEN: ${{ secrets.ENV_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
