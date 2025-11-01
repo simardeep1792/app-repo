@@ -146,9 +146,7 @@ jobs:
           
           echo "=== Committing directly to main branch ==="
           git add envs/dev/rollout.yaml
-          git commit -m "chore: bump app image to ${IMAGE_TAG}
-
-Automated update from app-repo commit ${{ github.sha }}"
+          git commit -m "chore: bump app image to ${IMAGE_TAG} - automated update from app-repo commit ${{ github.sha }}"
           
           # Push directly to main with explicit remote setup
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/simardeep1792/env-repo.git
