@@ -141,35 +141,20 @@ jobs:
             exit 0
           fi
           
-          # Create branch and commit
-          BRANCH="bump-${IMAGE_TAG}"
+          # For now, commit directly to main to avoid PAT permission issues
+          # TODO: Switch back to PR-based workflow once PAT has full repo permissions
           
-          # Check if branch already exists remotely
-          if git ls-remote --heads origin "${BRANCH}" | grep -q "${BRANCH}"; then
-            echo "Branch ${BRANCH} already exists, using timestamp suffix"
-            TIMESTAMP=$(date +%s)
-            BRANCH="bump-${IMAGE_TAG}-${TIMESTAMP}"
-          fi
-          
-          echo "Creating branch: ${BRANCH}"
-          git checkout -b "${BRANCH}"
+          echo "=== Committing directly to main branch ==="
           git add envs/dev/rollout.yaml
-          git commit -m "chore: bump app image to ${IMAGE_TAG}"
+          git commit -m "chore: bump app image to ${IMAGE_TAG}
+
+Automated update from app-repo commit ${{ github.sha }}"
           
-          # Push with explicit remote setup
+          # Push directly to main with explicit remote setup
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/simardeep1792/env-repo.git
-          echo "Pushing branch ${BRANCH} to remote"
-          git push origin "${BRANCH}"
+          echo "Pushing directly to main branch"
+          git push origin main
           
-          # Create PR using gh
-          echo "=== Creating Pull Request ==="
-          PR_URL=$(gh pr create \
-            --title "chore: bump app image to ${IMAGE_TAG}" \
-            --body "Automated image bump to \`${IMAGE_TAG}\` from app-repo commit ${{ github.sha }}" \
-            --head "${BRANCH}" \
-            --base main \
-            --repo simardeep1792/env-repo)
-          
-          echo "Pull request created successfully: ${PR_URL}"
+          echo "Successfully updated env-repo with new image: ${IMAGE_TAG}"
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
