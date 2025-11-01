@@ -92,10 +92,7 @@ jobs:
           echo "Using GH_PAT for cross-repo authentication"
           TOKEN="${{ secrets.GH_PAT }}"
           
-          # Set up GitHub CLI authentication
-          echo "${TOKEN}" | gh auth login --with-token
-          
-          # Verify authentication and permissions
+          # GitHub CLI will use GH_TOKEN env var automatically, no need for gh auth login
           echo "=== Authentication Status ==="
           gh auth status
           
